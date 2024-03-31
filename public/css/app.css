@@ -869,7 +869,7 @@ video {
 /* Where to put customized styles */
 
 .sim-label {
-  width: 8rem;
+  width: 12rem;
   color: #FFFFFFB0;
   font-weight: 700;
   padding-right: 1rem;
@@ -7804,7 +7804,7 @@ video {
 }
 
 .max-w-screen-lg {
-  max-width: 1024px;
+  max-width: 1110px;
 }
 
 .max-w-screen-xl {

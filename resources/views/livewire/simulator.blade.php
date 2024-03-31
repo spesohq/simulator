@@ -189,22 +189,10 @@
 
     <div class="flex-none flex items-center justify-between py-8 text-ash-darkest text-xs bg-white">
         <div class="space-x-5 ml-32">
-            <span class="text-blue">Made with
+            <p class="text-blue">Made with
                 <img class="inline-block w-3 h-3" src="{{ config('app.env') === 'production' ? secure_asset('img/heart.svg') : asset('img/heart.svg') }}" />
-                by
-            </span>
-            <span>
-                <img class="inline-block w-8 h-8 rounded-full border border-gray-300" src="{{ config('app.env') === 'production' ? secure_asset('img/yawmanford.jpg') : asset('img/yawmanford.jpg') }}" />
-                <a href="https://twitter.com/yawmanford" target="_blank">@yawmanford</a>
-            </span>
-            <span>
-                <img class="inline-block w-8 h-8 rounded-full border border-gray-300" src="{{ config('app.env') === 'production' ? secure_asset('img/isaacadzahsai.jpg') : asset('img/isaacadzahsai.jpg') }}" />
-                <a href="https://twitter.com/isaacadzahsai" target="_blank">@isaacadzahsai</a>
-            </span>
-            <span>
-                <img class="inline-block w-8 h-8 rounded-full border border-gray-300" src="{{ config('app.env') === 'production' ? secure_asset('img/maxxas.jpg') : asset('img/maxxas.jpg') }}" />
-                <a href="https://twitter.com/maxxxsas" target="_blank">@maxxxsas</a>
-            </span>
+                by Speso x <a href="https://twitter.com/isaacadzahsai" target="_blank">@isaacadzahsai</a> & <a href="https://twitter.com/maxxsas" target="_blank">@maxxsas</a>
+            </p>
         </div>
 
         <div class="mr-12">
