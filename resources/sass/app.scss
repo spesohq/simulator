@@ -1,0 +1,36 @@
+@tailwind base;
+
+@tailwind components;
+
+/* Where to put customized styles */
+
+.sim-label {
+    @apply w-32 text-off-white font-bold pr-4;
+}
+
+.sim-input {
+    @apply block w-full bg-blue-light border-none py-3 text-off-white;
+}
+
+.sim-select {
+    @apply block w-full bg-blue-light border-none py-3 text-off-white;
+}
+
+.sim-input:focus {
+    @apply bg-gray-100 text-blue;
+}
+
+::-webkit-scrollbar {
+    width: 0.15rem;
+    height: 0.15rem;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-500 rounded-md;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-blue rounded-md;
+}
+
+@tailwind utilities;
