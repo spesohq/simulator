@@ -17,6 +17,8 @@
         <!-- Styles -->
         <link href="{{ config('app.env') === 'production' ? secure_asset('css/app.css') : asset('css/app.css') }}" rel="stylesheet">
 
+        <link rel="icon" type="image/x-icon" href="{{ asset('img/favicon.png') }}">
+
         <livewire:styles>
     </head>
     <body>

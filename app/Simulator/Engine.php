@@ -57,19 +57,13 @@ class Engine
             throw UnknownMethod::create();
         }
 
-        $parsed = null;
+        $parsed = $response;
 
-        try {
+        if (is_array($response)) {
             $parsed = $response->json();
-        } catch (\Throwable $e) {
-            $parsed = null;
         }
 
-        if ($parsed === null || $parsed === false) {
-            $parsed = $response->body();
-        }
-
-        return $aggregator::intepretResponse($parsed);
+        return $aggregator::intepretResponse($response->json());
     }
 
     protected static function getAggregator($aggregatorName)
