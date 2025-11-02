@@ -40,6 +40,11 @@ class Simulator extends Component
             $this->output = $response['message'];
         } catch(Exception $exception) {
             $this->output = "An Error Occured\n{$exception->getMessage()}";
+        } finally {
+            $this->input = '';
+            if (method_exists($this, 'dispatchBrowserEvent')) {
+                $this->dispatchBrowserEvent('ussd-input-cleared');
+            }
         }
     }
 

@@ -164,7 +164,7 @@
                                         <div class="flex-none">
                                             <div class="flex flex-col space-y-2">
                                                 <h4 class="text-black font-bold">Enter USSD Code</h4>
-                                                <div x-data="{ input: '' }" class="inline-block relative">
+                                                <div x-data="{ input: '' }" x-on:ussd-input-cleared.window="input = ''" class="inline-block relative">
                                                     <input x-bind:class="{ 'bg-gray-100 text-blue-800': input !== '', 'bg-ash text-ash-darker': input === '' }" x-model="input" class="px-5 py-3 form-input rounded-md focus:bg-ash w-full" placeholder="eg.*721#" wire:model="input" type="text" name="input" />
                                                     <div class="absolute inset-y-0 right-0 flex items-center">
                                                         <div wire:model="input">
