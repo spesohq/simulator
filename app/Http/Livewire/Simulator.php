@@ -19,6 +19,16 @@ class Simulator extends Component
     public $input;
     public $output;
 
+    public function mount()
+    {
+        $this->url = request()->query('url', $this->url);
+        $this->method = request()->query('method', $this->method);
+        $this->network = request()->query('network', $this->network);
+        $this->phoneNumber = request()->query('phone', $this->phoneNumber);
+        $this->aggregator = request()->query('aggregator', $this->aggregator);
+        $this->input = request()->query('ussd', $this->input);
+    }
+
     public function sendRequest()
     {
         try {

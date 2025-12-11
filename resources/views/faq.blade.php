@@ -183,11 +183,39 @@
             <!-- FAQ Item 10 -->
             <div class="bg-white rounded-lg shadow-lg">
                 <button @click="openItem = openItem === 10 ? null : 10" class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition focus:outline-none">
-                    <h3 class="text-purple-800 font-bold text-lg text-left">How do I troubleshoot connection issues?</h3>
+                    <h3 class="text-purple-800 font-bold text-lg text-left">Can I pre-populate the form using a URL?</h3>
                     <svg x-show="openItem !== 10" class="w-6 h-6 text-purple-800 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
                     <svg x-show="openItem === 10" class="w-6 h-6 text-purple-800 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
                 </button>
                 <div x-show="openItem === 10" x-transition class="px-6 pb-6 border-t border-gray-200">
+                    <p class="text-gray-700 mb-4">
+                        Yes! You can share pre-filled simulator links by adding query parameters to the URL. Click the example below to try it:
+                    </p>
+                    <div class="bg-gray-100 p-4 rounded-lg mb-4 overflow-x-auto">
+                        <a href="{{ config('app.url') }}?url=https://birthreg.speso.co/ussd&method=post&network=mtn&phone=0544909090&aggregator=nalo&ussd=*920*28#" class="text-sm text-purple-800 hover:text-purple-900 font-semibold underline break-all">
+                            {{ config('app.url') }}?url=https://birthreg.speso.co/ussd&method=post&network=mtn&phone=0544909090&aggregator=nalo&ussd=*920*28#
+                        </a>
+                    </div>
+                    <p class="text-gray-700 mb-2 font-semibold">Available parameters:</p>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 ml-4">
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">url</code> - Host URL for your USSD endpoint</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">method</code> - Request method (get or post)</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">network</code> - Network operator (at, glo, mtn, telecel)</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">phone</code> - Phone number</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">aggregator</code> - Aggregator (korba, nsano, nalo, arkesel, africastalking)</li>
+                        <li><code class="bg-gray-200 px-2 py-1 rounded">ussd</code> - Initial USSD code</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- FAQ Item 11 -->
+            <div class="bg-white rounded-lg shadow-lg">
+                <button @click="openItem = openItem === 11 ? null : 11" class="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition focus:outline-none">
+                    <h3 class="text-purple-800 font-bold text-lg text-left">How do I troubleshoot connection issues?</h3>
+                    <svg x-show="openItem !== 11" class="w-6 h-6 text-purple-800 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                    <svg x-show="openItem === 11" class="w-6 h-6 text-purple-800 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                </button>
+                <div x-show="openItem === 11" x-transition class="px-6 pb-6 border-t border-gray-200">
                     <p class="text-gray-700 mb-4">
                         If you're experiencing connection issues:
                     </p>
