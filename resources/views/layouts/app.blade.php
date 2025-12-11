@@ -48,7 +48,7 @@
             <div class="flex-none flex items-center justify-between py-8 text-ash-darkest bg-white">
                 <div class="space-x-5 ml-32">
                     <p class="text-black">
-                        &copy; 2025. <a href="https://speso.co" target="_blank" class="text-purple-800 hover:text-purple-900 font-semibold">Speso Technologies Limited</a> <span class="mx-2">|</span> <a href="https://github.com/spesohq/simulator" target="_blank" class="text-purple-800 hover:text-purple-900 font-semibold">GitHub</a>
+                        &copy; 2025. <a href="https://speso.co" target="_blank" class="text-purple-800 hover:text-purple-900 font-semibold">Speso Technologies Limited</a>
                     </p>
                 </div>
 
