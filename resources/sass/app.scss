@@ -18,6 +18,13 @@
 
 .sim-input:focus {
     @apply bg-gray-100 text-blue;
+    outline: none;
+    box-shadow: none;
+}
+
+.form-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 ::-webkit-scrollbar {

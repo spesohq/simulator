@@ -164,15 +164,21 @@
   function isTesting() {
     return navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom");
   }
+  function checkedAttrLooseCompare(valueA, valueB) {
+    return valueA == valueB;
+  }
   function warnIfMalformedTemplate(el, directive) {
     if (el.tagName.toLowerCase() !== 'template') {
       console.warn(`Alpine: [${directive}] directive should only be added to <template> tags. See https://github.com/alpinejs/alpine#${directive}`);
     } else if (el.content.childElementCount !== 1) {
-      console.warn(`Alpine: <template> tag with [${directive}] encountered with multiple element roots. Make sure <template> only has a single child node.`);
+      console.warn(`Alpine: <template> tag with [${directive}] encountered with an unexpected number of root elements. Make sure <template> has a single root element. `);
     }
   }
   function kebabCase(subject) {
     return subject.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/[_\s]/, '-').toLowerCase();
+  }
+  function camelCase(subject) {
+    return subject.toLowerCase().replace(/-(\w)/g, (match, char) => char.toUpperCase());
   }
   function walk(el, callback) {
     if (callback(el) === false) return;
@@ -198,29 +204,72 @@
       timeout = setTimeout(later, wait);
     };
   }
-  function saferEval(expression, dataContext, additionalHelperVariables = {}) {
-    if (typeof expression === 'function') {
-      return expression.call(dataContext);
-    }
 
-    return new Function(['$data', ...Object.keys(additionalHelperVariables)], `var __alpine_result; with($data) { __alpine_result = ${expression} }; return __alpine_result`)(dataContext, ...Object.values(additionalHelperVariables));
+  const handleError = (el, expression, error) => {
+    console.warn(`Alpine Error: "${error}"\n\nExpression: "${expression}"\nElement:`, el);
+
+    if (!isTesting()) {
+      Object.assign(error, {
+        el,
+        expression
+      });
+      throw error;
+    }
+  };
+
+  function tryCatch(cb, {
+    el,
+    expression
+  }) {
+    try {
+      const value = cb();
+      return value instanceof Promise ? value.catch(e => handleError(el, expression, e)) : value;
+    } catch (e) {
+      handleError(el, expression, e);
+    }
   }
-  function saferEvalNoReturn(expression, dataContext, additionalHelperVariables = {}) {
-    if (typeof expression === 'function') {
-      return expression.call(dataContext);
-    } // For the cases when users pass only a function reference to the caller: `x-on:click="foo"`
-    // Where "foo" is a function. Also, we'll pass the function the event instance when we call it.
 
-
-    if (Object.keys(dataContext).includes(expression)) {
-      let methodReference = new Function(['dataContext', ...Object.keys(additionalHelperVariables)], `with(dataContext) { return ${expression} }`)(dataContext, ...Object.values(additionalHelperVariables));
-
-      if (typeof methodReference === 'function') {
-        return methodReference.call(dataContext, additionalHelperVariables['$event']);
+  function saferEval(el, expression, dataContext, additionalHelperVariables = {}) {
+    return tryCatch(() => {
+      if (typeof expression === 'function') {
+        return expression.call(dataContext);
       }
-    }
 
-    return new Function(['dataContext', ...Object.keys(additionalHelperVariables)], `with(dataContext) { ${expression} }`)(dataContext, ...Object.values(additionalHelperVariables));
+      return new Function(['$data', ...Object.keys(additionalHelperVariables)], `var __alpine_result; with($data) { __alpine_result = ${expression} }; return __alpine_result`)(dataContext, ...Object.values(additionalHelperVariables));
+    }, {
+      el,
+      expression
+    });
+  }
+  function saferEvalNoReturn(el, expression, dataContext, additionalHelperVariables = {}) {
+    return tryCatch(() => {
+      if (typeof expression === 'function') {
+        return Promise.resolve(expression.call(dataContext, additionalHelperVariables['$event']));
+      }
+
+      let AsyncFunction = Function;
+      /* MODERN-ONLY:START */
+
+      AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+      /* MODERN-ONLY:END */
+      // For the cases when users pass only a function reference to the caller: `x-on:click="foo"`
+      // Where "foo" is a function. Also, we'll pass the function the event instance when we call it.
+
+      if (Object.keys(dataContext).includes(expression)) {
+        let methodReference = new Function(['dataContext', ...Object.keys(additionalHelperVariables)], `with(dataContext) { return ${expression} }`)(dataContext, ...Object.values(additionalHelperVariables));
+
+        if (typeof methodReference === 'function') {
+          return Promise.resolve(methodReference.call(dataContext, additionalHelperVariables['$event']));
+        } else {
+          return Promise.resolve();
+        }
+      }
+
+      return Promise.resolve(new AsyncFunction(['dataContext', ...Object.keys(additionalHelperVariables)], `with(dataContext) { ${expression} }`)(dataContext, ...Object.values(additionalHelperVariables)));
+    }, {
+      el,
+      expression
+    });
   }
   const xAttrRE = /^x-(on|bind|data|text|html|model|if|for|show|cloak|transition|ref|spread)\b/;
   function isXAttr(attr) {
@@ -233,7 +282,7 @@
     let spreadDirective = directives.filter(directive => directive.type === 'spread')[0];
 
     if (spreadDirective) {
-      let spreadObject = saferEval(spreadDirective.expression, component.$data); // Add x-spread directives to the pile of existing directives.
+      let spreadObject = saferEval(el, spreadDirective.expression, component.$data); // Add x-spread directives to the pile of existing directives.
 
       directives = directives.concat(Object.entries(spreadObject).map(([name, value]) => parseHtmlAttribute({
         name,
@@ -241,10 +290,16 @@
       })));
     }
 
-    return directives.filter(i => {
-      // If no type is passed in for filtering, bypass filter
-      if (!type) return true;
-      return i.type === type;
+    if (type) return directives.filter(i => i.type === type);
+    return sortDirectives(directives);
+  }
+
+  function sortDirectives(directives) {
+    let directiveOrder = ['bind', 'model', 'show', 'catch-all'];
+    return directives.sort((a, b) => {
+      let typeA = directiveOrder.indexOf(a.type) === -1 ? 'catch-all' : a.type;
+      let typeB = directiveOrder.indexOf(b.type) === -1 ? 'catch-all' : b.type;
+      return directiveOrder.indexOf(typeA) - directiveOrder.indexOf(typeB);
     });
   }
 
@@ -254,7 +309,7 @@
   }) {
     const normalizedName = replaceAtAndColonWithStandardSyntax(name);
     const typeMatch = normalizedName.match(xAttrRE);
-    const valueMatch = normalizedName.match(/:([a-zA-Z\-:]+)/);
+    const valueMatch = normalizedName.match(/:([a-zA-Z0-9\-:]+)/);
     const modifiers = normalizedName.match(/\.[^.\]]+(?=[^\]]*$)/g) || [];
     return {
       type: typeMatch ? typeMatch[1] : null,
@@ -263,7 +318,6 @@
       expression: value
     };
   }
-
   function isBooleanAttr(attrName) {
     // As per HTML spec table https://html.spec.whatwg.org/multipage/indices.html#attributes-3:boolean-attribute
     // Array roughly ordered by estimated usage
@@ -282,8 +336,19 @@
   function convertClassStringToArray(classList, filterFn = Boolean) {
     return classList.split(' ').filter(filterFn);
   }
-  function transitionIn(el, show, component, forceSkip = false) {
+  const TRANSITION_TYPE_IN = 'in';
+  const TRANSITION_TYPE_OUT = 'out';
+  const TRANSITION_CANCELLED = 'cancelled';
+  function transitionIn(el, show, reject, component, forceSkip = false) {
+    // We don't want to transition on the initial page load.
     if (forceSkip) return show();
+
+    if (el.__x_transition && el.__x_transition.type === TRANSITION_TYPE_IN) {
+      // there is already a similar transition going on, this was probably triggered by
+      // a change in a different property, let's just leave the previous one doing its job
+      return;
+    }
+
     const attrs = getXAttrs(el, component, 'transition');
     const showAttr = getXAttrs(el, component, 'show')[0]; // If this is triggered by a x-show.transition.
 
@@ -294,17 +359,24 @@
       const settingBothSidesOfTransition = modifiers.includes('in') && modifiers.includes('out'); // If x-show.transition.in...out... only use "in" related modifiers for this transition.
 
       modifiers = settingBothSidesOfTransition ? modifiers.filter((i, index) => index < modifiers.indexOf('out')) : modifiers;
-      transitionHelperIn(el, modifiers, show); // Otherwise, we can assume x-transition:enter.
-    } else if (attrs.filter(attr => ['enter', 'enter-start', 'enter-end'].includes(attr.value)).length > 0) {
-      transitionClassesIn(el, component, attrs, show);
+      transitionHelperIn(el, modifiers, show, reject); // Otherwise, we can assume x-transition:enter.
+    } else if (attrs.some(attr => ['enter', 'enter-start', 'enter-end'].includes(attr.value))) {
+      transitionClassesIn(el, component, attrs, show, reject);
     } else {
       // If neither, just show that damn thing.
       show();
     }
   }
-  function transitionOut(el, hide, component, forceSkip = false) {
+  function transitionOut(el, hide, reject, component, forceSkip = false) {
     // We don't want to transition on the initial page load.
     if (forceSkip) return hide();
+
+    if (el.__x_transition && el.__x_transition.type === TRANSITION_TYPE_OUT) {
+      // there is already a similar transition going on, this was probably triggered by
+      // a change in a different property, let's just leave the previous one doing its job
+      return;
+    }
+
     const attrs = getXAttrs(el, component, 'transition');
     const showAttr = getXAttrs(el, component, 'show')[0];
 
@@ -313,14 +385,14 @@
       if (modifiers.includes('in') && !modifiers.includes('out')) return hide();
       const settingBothSidesOfTransition = modifiers.includes('in') && modifiers.includes('out');
       modifiers = settingBothSidesOfTransition ? modifiers.filter((i, index) => index > modifiers.indexOf('out')) : modifiers;
-      transitionHelperOut(el, modifiers, settingBothSidesOfTransition, hide);
-    } else if (attrs.filter(attr => ['leave', 'leave-start', 'leave-end'].includes(attr.value)).length > 0) {
-      transitionClassesOut(el, component, attrs, hide);
+      transitionHelperOut(el, modifiers, settingBothSidesOfTransition, hide, reject);
+    } else if (attrs.some(attr => ['leave', 'leave-start', 'leave-end'].includes(attr.value))) {
+      transitionClassesOut(el, component, attrs, hide, reject);
     } else {
       hide();
     }
   }
-  function transitionHelperIn(el, modifiers, showCallback) {
+  function transitionHelperIn(el, modifiers, showCallback, reject) {
     // Default values inspired by: https://material.io/design/motion/speed.html#duration
     const styleValues = {
       duration: modifierValue(modifiers, 'duration', 150),
@@ -334,9 +406,9 @@
         scale: 100
       }
     };
-    transitionHelper(el, modifiers, showCallback, () => {}, styleValues);
+    transitionHelper(el, modifiers, showCallback, () => {}, reject, styleValues, TRANSITION_TYPE_IN);
   }
-  function transitionHelperOut(el, modifiers, settingBothSidesOfTransition, hideCallback) {
+  function transitionHelperOut(el, modifiers, settingBothSidesOfTransition, hideCallback, reject) {
     // Make the "out" transition .5x slower than the "in". (Visually better)
     // HOWEVER, if they explicitly set a duration for the "out" transition,
     // use that.
@@ -353,7 +425,7 @@
         scale: modifierValue(modifiers, 'scale', 95)
       }
     };
-    transitionHelper(el, modifiers, () => {}, hideCallback, styleValues);
+    transitionHelper(el, modifiers, () => {}, hideCallback, reject, styleValues, TRANSITION_TYPE_OUT);
   }
 
   function modifierValue(modifiers, key, fallback) {
@@ -386,8 +458,13 @@
     return rawValue;
   }
 
-  function transitionHelper(el, modifiers, hook1, hook2, styleValues) {
-    // If the user set these style values, we'll put them back when we're done with them.
+  function transitionHelper(el, modifiers, hook1, hook2, reject, styleValues, type) {
+    // clear the previous transition if exists to avoid caching the wrong styles
+    if (el.__x_transition) {
+      el.__x_transition.cancel && el.__x_transition.cancel();
+    } // If the user set these style values, we'll put them back when we're done with them.
+
+
     const opacityCache = el.style.opacity;
     const transformCache = el.style.transform;
     const transformOriginCache = el.style.transformOrigin; // If no modifiers are present: x-show.transition, we'll default to both opacity and scale.
@@ -434,37 +511,43 @@
       }
 
     };
-    transition(el, stages);
+    transition(el, stages, type, reject);
   }
-  function transitionClassesIn(el, component, directives, showCallback) {
-    let ensureStringExpression = expression => {
-      return typeof expression === 'function' ? component.evaluateReturnExpression(el, expression) : expression;
-    };
 
+  const ensureStringExpression = (expression, el, component) => {
+    return typeof expression === 'function' ? component.evaluateReturnExpression(el, expression) : expression;
+  };
+
+  function transitionClassesIn(el, component, directives, showCallback, reject) {
     const enter = convertClassStringToArray(ensureStringExpression((directives.find(i => i.value === 'enter') || {
       expression: ''
-    }).expression));
+    }).expression, el, component));
     const enterStart = convertClassStringToArray(ensureStringExpression((directives.find(i => i.value === 'enter-start') || {
       expression: ''
-    }).expression));
+    }).expression, el, component));
     const enterEnd = convertClassStringToArray(ensureStringExpression((directives.find(i => i.value === 'enter-end') || {
       expression: ''
-    }).expression));
-    transitionClasses(el, enter, enterStart, enterEnd, showCallback, () => {});
+    }).expression, el, component));
+    transitionClasses(el, enter, enterStart, enterEnd, showCallback, () => {}, TRANSITION_TYPE_IN, reject);
   }
-  function transitionClassesOut(el, component, directives, hideCallback) {
-    const leave = convertClassStringToArray((directives.find(i => i.value === 'leave') || {
+  function transitionClassesOut(el, component, directives, hideCallback, reject) {
+    const leave = convertClassStringToArray(ensureStringExpression((directives.find(i => i.value === 'leave') || {
       expression: ''
-    }).expression);
-    const leaveStart = convertClassStringToArray((directives.find(i => i.value === 'leave-start') || {
+    }).expression, el, component));
+    const leaveStart = convertClassStringToArray(ensureStringExpression((directives.find(i => i.value === 'leave-start') || {
       expression: ''
-    }).expression);
-    const leaveEnd = convertClassStringToArray((directives.find(i => i.value === 'leave-end') || {
+    }).expression, el, component));
+    const leaveEnd = convertClassStringToArray(ensureStringExpression((directives.find(i => i.value === 'leave-end') || {
       expression: ''
-    }).expression);
-    transitionClasses(el, leave, leaveStart, leaveEnd, () => {}, hideCallback);
+    }).expression, el, component));
+    transitionClasses(el, leave, leaveStart, leaveEnd, () => {}, hideCallback, TRANSITION_TYPE_OUT, reject);
   }
-  function transitionClasses(el, classesDuring, classesStart, classesEnd, hook1, hook2) {
+  function transitionClasses(el, classesDuring, classesStart, classesEnd, hook1, hook2, type, reject) {
+    // clear the previous transition if exists to avoid caching the wrong classes
+    if (el.__x_transition) {
+      el.__x_transition.cancel && el.__x_transition.cancel();
+    }
+
     const originalClasses = el.__x_original_classes || [];
     const stages = {
       start() {
@@ -495,12 +578,36 @@
       }
 
     };
-    transition(el, stages);
+    transition(el, stages, type, reject);
   }
-  function transition(el, stages) {
+  function transition(el, stages, type, reject) {
+    const finish = once(() => {
+      stages.hide(); // Adding an "isConnected" check, in case the callback
+      // removed the element from the DOM.
+
+      if (el.isConnected) {
+        stages.cleanup();
+      }
+
+      delete el.__x_transition;
+    });
+    el.__x_transition = {
+      // Set transition type so we can avoid clearing transition if the direction is the same
+      type: type,
+      // create a callback for the last stages of the transition so we can call it
+      // from different point and early terminate it. Once will ensure that function
+      // is only called one time.
+      cancel: once(() => {
+        reject(TRANSITION_CANCELLED);
+        finish();
+      }),
+      finish,
+      // This store the next animation frame so we can cancel it
+      nextFrame: null
+    };
     stages.start();
     stages.during();
-    requestAnimationFrame(() => {
+    el.__x_transition.nextFrame = requestAnimationFrame(() => {
       // Note: Safari's transitionDuration property will list out comma separated transition durations
       // for every single transition property. Let's grab the first one and call it a day.
       let duration = Number(getComputedStyle(el).transitionDuration.replace(/,.*/, '').replace('s', '')) * 1000;
@@ -510,22 +617,25 @@
       }
 
       stages.show();
-      requestAnimationFrame(() => {
-        stages.end(); // Assign current transition to el in case we need to force it.
-
-        setTimeout(() => {
-          stages.hide(); // Adding an "isConnected" check, in case the callback
-          // removed the element from the DOM.
-
-          if (el.isConnected) {
-            stages.cleanup();
-          }
-        }, duration);
+      el.__x_transition.nextFrame = requestAnimationFrame(() => {
+        stages.end();
+        setTimeout(el.__x_transition.finish, duration);
       });
     });
   }
   function isNumeric(subject) {
-    return !isNaN(subject);
+    return !Array.isArray(subject) && !isNaN(subject);
+  } // Thanks @vuejs
+  // https://github.com/vuejs/vue/blob/4de4649d9637262a9b007720b59f80ac72a5620c/src/shared/util.js
+
+  function once(callback) {
+    let called = false;
+    return function () {
+      if (!called) {
+        called = true;
+        callback.apply(this, arguments);
+      }
+    };
   }
 
   function handleForDirective(component, templateEl, expression, initialUpdate, extraVars) {
@@ -542,7 +652,7 @@
       if (!nextEl) {
         nextEl = addElementInLoopAfterCurrentEl(templateEl, currentEl); // And transition it in if it's not the first page load.
 
-        transitionIn(nextEl, () => {}, component, initialUpdate);
+        transitionIn(nextEl, () => {}, () => {}, component, initialUpdate);
         nextEl.__x_for = iterationScopeVariables;
         component.initializeElements(nextEl, () => nextEl.__x_for); // Otherwise update the element we found.
       } else {
@@ -562,7 +672,7 @@
     let forIteratorRE = /,([^,\}\]]*)(?:,([^,\}\]]*))?$/;
     let stripParensRE = /^\(|\)$/g;
     let forAliasRE = /([\s\S]*?)\s+(?:in|of)\s+([\s\S]*)/;
-    let inMatch = expression.match(forAliasRE);
+    let inMatch = String(expression).match(forAliasRE);
     if (!inMatch) return;
     let res = {};
     res.items = inMatch[2].trim();
@@ -606,7 +716,13 @@
       return [];
     }
 
-    return component.evaluateReturnExpression(el, iteratorNames.items, extraVars);
+    let items = component.evaluateReturnExpression(el, iteratorNames.items, extraVars); // This adds support for the `i in n` syntax.
+
+    if (isNumeric(items) && items >= 0) {
+      items = Array.from(Array(items).keys(), i => i + 1);
+    }
+
+    return items;
   }
 
   function addElementInLoopAfterCurrentEl(templateEl, currentEl) {
@@ -616,7 +732,9 @@
   }
 
   function lookAheadForMatchingKeyedElementAndMoveItIfFound(nextEl, currentKey) {
-    if (!nextEl) return; // If the the key's DO match, no need to look ahead.
+    if (!nextEl) return; // If we are already past the x-for generated elements, we don't need to look ahead.
+
+    if (nextEl.__x_for_key === undefined) return; // If the the key's DO match, no need to look ahead.
 
     if (nextEl.__x_for_key === currentKey) return nextEl; // If they don't, we'll look ahead for a match.
     // If we find it, we'll move it to the current position in the loop.
@@ -640,17 +758,18 @@
       let nextSibling = nextElementFromOldLoop.nextElementSibling;
       transitionOut(nextElementFromOldLoop, () => {
         nextElementFromOldLoopImmutable.remove();
-      }, component);
+      }, () => {}, component);
       nextElementFromOldLoop = nextSibling && nextSibling.__x_for_key !== undefined ? nextSibling : false;
     }
   }
 
-  function handleAttributeBindingDirective(component, el, attrName, expression, extraVars, attrType) {
+  function handleAttributeBindingDirective(component, el, attrName, expression, extraVars, attrType, modifiers) {
     var value = component.evaluateReturnExpression(el, expression, extraVars);
 
     if (attrName === 'value') {
-      // If nested model key is undefined, set the default value to empty string.
-      if (value === undefined && expression.match(/\./).length) {
+      if (Alpine.ignoreFocusedForValueBinding && document.activeElement.isSameNode(el)) return; // If nested model key is undefined, set the default value to empty string.
+
+      if (value === undefined && String(expression).match(/\./)) {
         value = '';
       }
 
@@ -661,20 +780,20 @@
         if (el.attributes.value === undefined && attrType === 'bind') {
           el.value = value;
         } else if (attrType !== 'bind') {
-          el.checked = el.value == value;
+          el.checked = checkedAttrLooseCompare(el.value, value);
         }
       } else if (el.type === 'checkbox') {
         // If we are explicitly binding a string to the :value, set the string,
         // If the value is a boolean, leave it alone, it will be set to "on"
         // automatically.
-        if (typeof value === 'string' && attrType === 'bind') {
-          el.value = value;
+        if (typeof value !== 'boolean' && ![null, undefined].includes(value) && attrType === 'bind') {
+          el.value = String(value);
         } else if (attrType !== 'bind') {
           if (Array.isArray(value)) {
             // I'm purposely not using Array.includes here because it's
             // strict, and because of Numeric/String mis-casting, I
             // want the "includes" to be "fuzzy".
-            el.checked = value.some(val => val == el.value);
+            el.checked = value.some(val => checkedAttrLooseCompare(val, el.value));
           } else {
             el.checked = !!value;
           }
@@ -702,11 +821,12 @@
         });
       } else {
         const originalClasses = el.__x_original_classes || [];
-        const newClasses = convertClassStringToArray(value);
+        const newClasses = value ? convertClassStringToArray(value) : [];
         el.setAttribute('class', arrayUnique(originalClasses.concat(newClasses)).join(' '));
       }
     } else {
-      // If an attribute's bound value is null, undefined or false, remove the attribute
+      attrName = modifiers.includes('camel') ? camelCase(attrName) : attrName; // If an attribute's bound value is null, undefined or false, remove the attribute
+
       if ([null, undefined, false].includes(value)) {
         el.removeAttribute(attrName);
       } else {
@@ -732,11 +852,11 @@
 
   function handleTextDirective(el, output, expression) {
     // If nested model key is undefined, set the default value to empty string.
-    if (output === undefined && expression.match(/\./)) {
+    if (output === undefined && String(expression).match(/\./)) {
       output = '';
     }
 
-    el.innerText = output;
+    el.textContent = output;
   }
 
   function handleHtmlDirective(component, el, expression, extraVars) {
@@ -746,6 +866,7 @@
   function handleShowDirective(component, el, value, modifiers, initialUpdate = false) {
     const hide = () => {
       el.style.display = 'none';
+      el.__x_is_shown = false;
     };
 
     const show = () => {
@@ -754,6 +875,8 @@
       } else {
         el.style.removeProperty('display');
       }
+
+      el.__x_is_shown = true;
     };
 
     if (initialUpdate === true) {
@@ -766,11 +889,14 @@
       return;
     }
 
-    const handle = resolve => {
+    const handle = (resolve, reject) => {
       if (value) {
-        transitionIn(el, () => {
-          show();
-        }, component);
+        if (el.style.display === 'none' || el.__x_transition) {
+          transitionIn(el, () => {
+            show();
+          }, reject, component);
+        }
+
         resolve(() => {});
       } else {
         if (el.style.display !== 'none') {
@@ -778,7 +904,7 @@
             resolve(() => {
               hide();
             });
-          }, component);
+          }, reject, component);
         } else {
           resolve(() => {});
         }
@@ -790,7 +916,7 @@
 
 
     if (modifiers.includes('immediate')) {
-      handle(finish => finish());
+      handle(finish => finish(), () => {});
       return;
     } // x-show is encountered during a DOM tree walk. If an element
     // we encounter is NOT a child of another x-show element we
@@ -809,23 +935,35 @@
     warnIfMalformedTemplate(el, 'x-if');
     const elementHasAlreadyBeenAdded = el.nextElementSibling && el.nextElementSibling.__x_inserted_me === true;
 
-    if (expressionResult && !elementHasAlreadyBeenAdded) {
+    if (expressionResult && (!elementHasAlreadyBeenAdded || el.__x_transition)) {
       const clone = document.importNode(el.content, true);
       el.parentElement.insertBefore(clone, el.nextElementSibling);
-      transitionIn(el.nextElementSibling, () => {}, component, initialUpdate);
+      transitionIn(el.nextElementSibling, () => {}, () => {}, component, initialUpdate);
       component.initializeElements(el.nextElementSibling, extraVars);
       el.nextElementSibling.__x_inserted_me = true;
     } else if (!expressionResult && elementHasAlreadyBeenAdded) {
       transitionOut(el.nextElementSibling, () => {
         el.nextElementSibling.remove();
-      }, component, initialUpdate);
+      }, () => {}, component, initialUpdate);
     }
   }
 
   function registerListener(component, el, event, modifiers, expression, extraVars = {}) {
+    const options = {
+      passive: modifiers.includes('passive')
+    };
+
+    if (modifiers.includes('camel')) {
+      event = camelCase(event);
+    }
+
+    let handler, listenerTarget;
+
     if (modifiers.includes('away')) {
-      let handler = e => {
-        // Don't do anything if the click came form the element or within it.
+      listenerTarget = document;
+
+      handler = e => {
+        // Don't do anything if the click came from the element or within it.
         if (el.contains(e.target)) return; // Don't do anything if this element isn't currently visible.
 
         if (el.offsetWidth < 1 && el.offsetHeight < 1) return; // Now that we are sure the element is visible, AND the click
@@ -834,21 +972,18 @@
         runListenerHandler(component, expression, e, extraVars);
 
         if (modifiers.includes('once')) {
-          document.removeEventListener(event, handler);
+          document.removeEventListener(event, handler, options);
         }
-      }; // Listen for this event at the root level.
-
-
-      document.addEventListener(event, handler);
+      };
     } else {
-      let listenerTarget = modifiers.includes('window') ? window : modifiers.includes('document') ? document : el;
+      listenerTarget = modifiers.includes('window') ? window : modifiers.includes('document') ? document : el;
 
-      let handler = e => {
+      handler = e => {
         // Remove this global event handler if the element that declared it
         // has been removed. It's now stale.
         if (listenerTarget === window || listenerTarget === document) {
           if (!document.body.contains(el)) {
-            listenerTarget.removeEventListener(event, handler);
+            listenerTarget.removeEventListener(event, handler, options);
             return;
           }
         }
@@ -866,25 +1001,26 @@
 
         if (!modifiers.includes('self') || e.target === el) {
           const returnValue = runListenerHandler(component, expression, e, extraVars);
-
-          if (returnValue === false) {
-            e.preventDefault();
-          } else {
-            if (modifiers.includes('once')) {
-              listenerTarget.removeEventListener(event, handler);
+          returnValue.then(value => {
+            if (value === false) {
+              e.preventDefault();
+            } else {
+              if (modifiers.includes('once')) {
+                listenerTarget.removeEventListener(event, handler, options);
+              }
             }
-          }
+          });
         }
       };
-
-      if (modifiers.includes('debounce')) {
-        let nextModifier = modifiers[modifiers.indexOf('debounce') + 1] || 'invalid-wait';
-        let wait = isNumeric(nextModifier.split('ms')[0]) ? Number(nextModifier.split('ms')[0]) : 250;
-        handler = debounce(handler, wait);
-      }
-
-      listenerTarget.addEventListener(event, handler);
     }
+
+    if (modifiers.includes('debounce')) {
+      let nextModifier = modifiers[modifiers.indexOf('debounce') + 1] || 'invalid-wait';
+      let wait = isNumeric(nextModifier.split('ms')[0]) ? Number(nextModifier.split('ms')[0]) : 250;
+      handler = debounce(handler, wait);
+    }
+
+    listenerTarget.addEventListener(event, handler, options);
   }
 
   function runListenerHandler(component, expression, e, extraVars) {
@@ -977,7 +1113,7 @@
         // If the data we are binding to is an array, toggle its value inside the array.
         if (Array.isArray(currentValue)) {
           const newValue = modifiers.includes('number') ? safeParseNumber(event.target.value) : event.target.value;
-          return event.target.checked ? currentValue.concat([newValue]) : currentValue.filter(i => i !== newValue);
+          return event.target.checked ? currentValue.concat([newValue]) : currentValue.filter(el => !checkedAttrLooseCompare(el, newValue));
         } else {
           return event.target.checked;
         }
@@ -1400,14 +1536,23 @@
   }
 
   class Component {
-    constructor(el, seedDataForCloning = null) {
+    constructor(el, componentForClone = null) {
       this.$el = el;
       const dataAttr = this.$el.getAttribute('x-data');
       const dataExpression = dataAttr === '' ? '{}' : dataAttr;
       const initExpression = this.$el.getAttribute('x-init');
-      this.unobservedData = seedDataForCloning ? seedDataForCloning : saferEval(dataExpression, {
+      let dataExtras = {
         $el: this.$el
+      };
+      let canonicalComponentElementReference = componentForClone ? componentForClone.$el : this.$el;
+      Object.entries(Alpine.magicProperties).forEach(([name, callback]) => {
+        Object.defineProperty(dataExtras, `$${name}`, {
+          get: function get() {
+            return callback(canonicalComponentElementReference);
+          }
+        });
       });
+      this.unobservedData = componentForClone ? componentForClone.getUnobservedData() : saferEval(el, dataExpression, dataExtras);
       // Construct a Proxy-based observable. This will be used to handle reactivity.
 
       let {
@@ -1432,21 +1577,38 @@
         if (!this.watchers[property]) this.watchers[property] = [];
         this.watchers[property].push(callback);
       };
+      /* MODERN-ONLY:START */
+      // We remove this piece of code from the legacy build.
+      // In IE11, we have already defined our helpers at this point.
+      // Register custom magic properties.
+
+
+      Object.entries(Alpine.magicProperties).forEach(([name, callback]) => {
+        Object.defineProperty(this.unobservedData, `$${name}`, {
+          get: function get() {
+            return callback(canonicalComponentElementReference, this.$el);
+          }
+        });
+      });
+      /* MODERN-ONLY:END */
 
       this.showDirectiveStack = [];
       this.showDirectiveLastElement;
+      componentForClone || Alpine.onBeforeComponentInitializeds.forEach(callback => callback(this));
       var initReturnedCallback; // If x-init is present AND we aren't cloning (skip x-init on clone)
 
-      if (initExpression && !seedDataForCloning) {
+      if (initExpression && !componentForClone) {
         // We want to allow data manipulation, but not trigger DOM updates just yet.
         // We haven't even initialized the elements with their Alpine bindings. I mean c'mon.
         this.pauseReactivity = true;
         initReturnedCallback = this.evaluateReturnExpression(this.$el, initExpression);
         this.pauseReactivity = false;
       } // Register all our listeners and set all our attribute bindings.
+      // If we're cloning a component, the third parameter ensures no duplicate
+      // event listeners are registered (the mutation observer will take care of them)
 
 
-      this.initializeElements(this.$el); // Use mutation observer to detect new elements being added within this component at run-time.
+      this.initializeElements(this.$el, () => {}, componentForClone); // Use mutation observer to detect new elements being added within this component at run-time.
       // Alpine's just so darn flexible amirite?
 
       this.listenForNewElementsToInitialize();
@@ -1456,6 +1618,10 @@
         // Alpine's got it's grubby little paws all over everything.
         initReturnedCallback.call(this.$data);
       }
+
+      componentForClone || setTimeout(() => {
+        Alpine.onComponentInitializeds.forEach(callback => callback(this));
+      }, 0);
     }
 
     getUnobservedData() {
@@ -1471,6 +1637,22 @@
         if (self.watchers[key]) {
           // If there's a watcher for this specific key, run it.
           self.watchers[key].forEach(callback => callback(target[key]));
+        } else if (Array.isArray(target)) {
+          // Arrays are special cases, if any of the items change, we consider the array as mutated.
+          Object.keys(self.watchers).forEach(fullDotNotationKey => {
+            let dotNotationParts = fullDotNotationKey.split('.'); // Ignore length mutations since they would result in duplicate calls.
+            // For example, when calling push, we would get a mutation for the item's key
+            // and a second mutation for the length property.
+
+            if (key === 'length') return;
+            dotNotationParts.reduce((comparisonData, part) => {
+              if (Object.is(target, comparisonData[part])) {
+                self.watchers[fullDotNotationKey].forEach(callback => callback(target));
+              }
+
+              return comparisonData[part];
+            }, self.unobservedData);
+          });
         } else {
           // Let's walk through the watchers with "dot-notation" (foo.bar) and see
           // if this mutation fits any of them.
@@ -1488,7 +1670,7 @@
               }
 
               return comparisonData[part];
-            }, self.getUnobservedData());
+            }, self.unobservedData);
           });
         } // Don't react to data changes for cases like the `x-created` hook.
 
@@ -1515,28 +1697,28 @@
       });
     }
 
-    initializeElements(rootEl, extraVars = () => {}) {
+    initializeElements(rootEl, extraVars = () => {}, componentForClone = false) {
       this.walkAndSkipNestedComponents(rootEl, el => {
         // Don't touch spawns from for loop
         if (el.__x_for_key !== undefined) return false; // Don't touch spawns from if directives
 
         if (el.__x_inserted_me !== undefined) return false;
-        this.initializeElement(el, extraVars);
+        this.initializeElement(el, extraVars, componentForClone ? false : true);
       }, el => {
-        el.__x = new Component(el);
+        if (!componentForClone) el.__x = new Component(el);
       });
       this.executeAndClearRemainingShowDirectiveStack();
       this.executeAndClearNextTickStack(rootEl);
     }
 
-    initializeElement(el, extraVars) {
+    initializeElement(el, extraVars, shouldRegisterListeners = true) {
       // To support class attribute merging, we have to know what the element's
       // original class attribute looked like for reference.
       if (el.hasAttribute('class') && getXAttrs(el, this).length > 0) {
         el.__x_original_classes = convertClassStringToArray(el.getAttribute('class'));
       }
 
-      this.registerListeners(el, extraVars);
+      shouldRegisterListeners && this.registerListeners(el, extraVars);
       this.resolveBoundAttributes(el, true, extraVars);
     }
 
@@ -1569,17 +1751,19 @@
       // The goal here is to start all the x-show transitions
       // and build a nested promise chain so that elements
       // only hide when the children are finished hiding.
-      this.showDirectiveStack.reverse().map(thing => {
-        return new Promise(resolve => {
-          thing(finish => {
-            resolve(finish);
+      this.showDirectiveStack.reverse().map(handler => {
+        return new Promise((resolve, reject) => {
+          handler(resolve, reject);
+        });
+      }).reduce((promiseChain, promise) => {
+        return promiseChain.then(() => {
+          return promise.then(finishElement => {
+            finishElement();
           });
         });
-      }).reduce((nestedPromise, promise) => {
-        return nestedPromise.then(() => {
-          return promise.then(finish => finish());
-        });
-      }, Promise.resolve(() => {})); // We've processed the handler stack. let's clear it.
+      }, Promise.resolve(() => {})).catch(e => {
+        if (e !== TRANSITION_CANCELLED) throw e;
+      }); // We've processed the handler stack. let's clear it.
 
       this.showDirectiveStack = [];
       this.showDirectiveLastElement = undefined;
@@ -1610,17 +1794,6 @@
 
     resolveBoundAttributes(el, initialUpdate = false, extraVars) {
       let attrs = getXAttrs(el, this);
-
-      if (el.type !== undefined && el.type === 'radio') {
-        // If there's an x-model on a radio input, move it to end of attribute list
-        // to ensure that x-bind:value (if present) is processed first.
-        const modelIdx = attrs.findIndex(attr => attr.type === 'model');
-
-        if (modelIdx > -1) {
-          attrs.push(attrs.splice(modelIdx, 1)[0]);
-        }
-      }
-
       attrs.forEach(({
         type,
         value,
@@ -1629,13 +1802,13 @@
       }) => {
         switch (type) {
           case 'model':
-            handleAttributeBindingDirective(this, el, 'value', expression, extraVars, type);
+            handleAttributeBindingDirective(this, el, 'value', expression, extraVars, type, modifiers);
             break;
 
           case 'bind':
             // The :key binding on an x-for is special, ignore it.
             if (el.tagName.toLowerCase() === 'template' && value === 'key') return;
-            handleAttributeBindingDirective(this, el, value, expression, extraVars, type);
+            handleAttributeBindingDirective(this, el, value, expression, extraVars, type, modifiers);
             break;
 
           case 'text':
@@ -1655,7 +1828,7 @@
           case 'if':
             // If this element also has x-for on it, don't process x-if.
             // We will let the "x-for" directive handle the "if"ing.
-            if (attrs.filter(i => i.type === 'for').length > 0) return;
+            if (attrs.some(i => i.type === 'for')) return;
             var output = this.evaluateReturnExpression(el, expression, extraVars);
             handleIfDirective(this, el, output, initialUpdate, extraVars);
             break;
@@ -1672,13 +1845,13 @@
     }
 
     evaluateReturnExpression(el, expression, extraVars = () => {}) {
-      return saferEval(expression, this.$data, _objectSpread2(_objectSpread2({}, extraVars()), {}, {
+      return saferEval(el, expression, this.$data, _objectSpread2(_objectSpread2({}, extraVars()), {}, {
         $dispatch: this.getDispatchFunction(el)
       }));
     }
 
     evaluateCommandExpression(el, expression, extraVars = () => {}) {
-      return saferEvalNoReturn(expression, this.$data, _objectSpread2(_objectSpread2({}, extraVars()), {}, {
+      return saferEvalNoReturn(el, expression, this.$data, _objectSpread2(_objectSpread2({}, extraVars()), {}, {
         $dispatch: this.getDispatchFunction(el)
       }));
     }
@@ -1706,7 +1879,8 @@
           if (!(closestParentComponent && closestParentComponent.isSameNode(this.$el))) continue;
 
           if (mutations[i].type === 'attributes' && mutations[i].attributeName === 'x-data') {
-            const rawData = saferEval(mutations[i].target.getAttribute('x-data'), {
+            const xAttr = mutations[i].target.getAttribute('x-data') || '{}';
+            const rawData = saferEval(this.$el, xAttr, {
               $el: this.$el
             });
             Object.keys(rawData).forEach(key => {
@@ -1761,8 +1935,12 @@
   }
 
   const Alpine = {
-    version: "2.4.1",
+    version: "2.8.2",
     pauseMutationObserver: false,
+    magicProperties: {},
+    onComponentInitializeds: [],
+    onBeforeComponentInitializeds: [],
+    ignoreFocusedForValueBinding: false,
     start: async function start() {
       if (!isTesting()) {
         await domReady();
@@ -1778,9 +1956,7 @@
           this.initializeComponent(el);
         });
       });
-      this.listenForNewUninitializedComponentsAtRunTime(el => {
-        this.initializeComponent(el);
-      });
+      this.listenForNewUninitializedComponentsAtRunTime();
     },
     discoverComponents: function discoverComponents(callback) {
       const rootEls = document.querySelectorAll('[x-data]');
@@ -1794,7 +1970,7 @@
         callback(rootEl);
       });
     },
-    listenForNewUninitializedComponentsAtRunTime: function listenForNewUninitializedComponentsAtRunTime(callback) {
+    listenForNewUninitializedComponentsAtRunTime: function listenForNewUninitializedComponentsAtRunTime() {
       const targetNode = document.querySelector('body');
       const observerOptions = {
         childList: true,
@@ -1836,8 +2012,17 @@
     },
     clone: function clone(component, newEl) {
       if (!newEl.__x) {
-        newEl.__x = new Component(newEl, component.getUnobservedData());
+        newEl.__x = new Component(newEl, component);
       }
+    },
+    addMagicProperty: function addMagicProperty(name, callback) {
+      this.magicProperties[name] = callback;
+    },
+    onComponentInitialized: function onComponentInitialized(callback) {
+      this.onComponentInitializeds.push(callback);
+    },
+    onBeforeComponentInitialized: function onBeforeComponentInitialized(callback) {
+      this.onBeforeComponentInitializeds.push(callback);
     }
   };
 
@@ -1878,7 +2063,7 @@ __webpack_require__(/*! alpinejs */ "./node_modules/alpinejs/dist/alpine.js");
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-// removed by extract-text-webpack-plugin
+throw new Error("Module build failed (from ./node_modules/css-loader/index.js):\nModuleBuildError: Module build failed (from ./node_modules/postcss-loader/src/index.js):\n/Users/manford/Code/simulator/node_modules/generator-function/require.mjs:1\n(function (exports, require, module, __filename, __dirname) { import getGeneratorFunction from './index.js';\n                                                              ^^^^^^\n\nSyntaxError: Cannot use import statement outside a module\n    at new Script (node:vm:117:7)\n    at NativeCompileCache._moduleCompile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:240:18)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:184:36)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/is-generator-function/index.js:12:28)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/which-builtin-type/index.js:12:27)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/reflect.getprototypeof/implementation.js:6:24)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/reflect.getprototypeof/polyfill.js:3:22)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/typed-array-byte-offset/index.js:5:11)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at /Users/manford/Code/simulator/node_modules/webpack/lib/NormalModule.js:316:20\n    at /Users/manford/Code/simulator/node_modules/loader-runner/lib/LoaderRunner.js:367:11\n    at /Users/manford/Code/simulator/node_modules/loader-runner/lib/LoaderRunner.js:233:18\n    at context.callback (/Users/manford/Code/simulator/node_modules/loader-runner/lib/LoaderRunner.js:111:13)\n    at /Users/manford/Code/simulator/node_modules/postcss-loader/src/index.js:208:9");
 
 /***/ }),
 
@@ -1889,8 +2074,8 @@ __webpack_require__(/*! alpinejs */ "./node_modules/alpinejs/dist/alpine.js");
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /home/cybersai/PROJECTS/Laravel/ussd-simulator/resources/js/app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! /home/cybersai/PROJECTS/Laravel/ussd-simulator/resources/sass/app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! /Users/manford/Code/simulator/resources/js/app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! /Users/manford/Code/simulator/resources/sass/app.scss */"./resources/sass/app.scss");
 
 
 /***/ })

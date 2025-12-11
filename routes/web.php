@@ -14,3 +14,5 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::view('/', 'home')->name('home');
+Route::view('/how-it-works', 'how-it-works')->name('how-it-works');
+Route::view('/faq', 'faq')->name('faq');
