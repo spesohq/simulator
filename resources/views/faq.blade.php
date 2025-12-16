@@ -5,7 +5,7 @@
 
 @section('content')
     <h1 class="text-white font-semibold text-3xl tracking-wide mb-4">
-        ❓ Frequently Asked Questions
+        Frequently Asked Questions
     </h1>
 
     <p class="text-white text-lg leading-relaxed mb-8">
