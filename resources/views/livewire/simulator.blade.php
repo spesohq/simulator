@@ -1,6 +1,6 @@
 <div class="flex-1">
     <div class="flex flex-col md:flex-row h-full">
-    <div class="flex-1 pr-0 md:pr-12 lg:pr-24">
+        <div class="flex-1 pr-0 md:pr-12">
             <h3 class="text-white font-semibold text-xl tracking-wide mb-12">
                 Intended for use by developers to test their endpoint <br>
                 implementations before integration.
@@ -148,7 +148,7 @@
             </div>
         </div>
 
-        <div class="w-full md:w-72 flex-none mt-6 md:mt-0 md:ml-4 lg:ml-8">
+        <div class="w-full md:w-72 flex-none mt-6 md:mt-0">
             <div class="bg-white w-full sm:w-72 sm:h-135 rounded-2xl px-3 pt-3 pb-8 shadow-xl">
                 <div class="bg-ash-light h-full rounded-xl">
                     <div class="flex flex-col h-full space-y-2 p-2">
