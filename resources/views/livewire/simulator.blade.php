@@ -7,9 +7,9 @@
             </h3>
 
             <div class="space-y-4 pb-16">
-                <div class="flex items-center">
-                    <label class="sim-label">Host URL</label>
-                    <div x-data="{ url: '{{ $url }}' }" class="inline-block relative w-full max-w-sm">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="w-full sm:w-32 text-white font-bold pr-0 sm:pr-4 mb-0 sm:mb-0">Host URL</label>
+                    <div x-data="{ url: '{{ $url }}' }" class="inline-block relative w-full sm:max-w-sm">
                         <input x-bind:class="{ 'bg-gray-100 text-blue-800 opacity-100': url !== '' }" x-model="url" class="form-input sim-input pl-5 pr-12 bg-white" wire:model.defer="url" type="url" name="url" placeholder="eg. https://a924d784.ngrok.io" autocomplete="off" />
                         <div class="absolute inset-y-0 right-0 flex items-center">
                             <div wire:model="url">
@@ -18,9 +18,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <label class="sim-label">Method</label>
-                    <div x-data="{ method: '{{ $method }}', hide: true }" class="inline-block relative w-full max-w-sm z-30">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="w-full sm:w-32 text-white font-bold pr-0 sm:pr-4 mb-0 sm:mb-0">Method</label>
+                    <div x-data="{ method: '{{ $method }}', hide: true }" class="inline-block relative w-full sm:max-w-sm z-30">
                         <div class="absolute inset-y-0 left-0 flex items-center">
                             <svg x-show="method === 'get'" class="w-6 h-6 ml-5" viewBox="0 0 15.154 11.996"><g id="Get" transform="translate(-276 -340.683)"><path id="Path_118" data-name="Path 118" d="M-964.929,1105.092l3.86-2.687a.311.311,0,0,1,.488.255v1.819h4.805a.868.868,0,0,1,.868.868.867.867,0,0,1-.868.868h-4.805v1.819a.311.311,0,0,1-.488.255l-3.86-2.687A.31.31,0,0,1-964.929,1105.092Z" transform="translate(1241.062 -761.666)" fill="#1d3f4d"/><path id="Path_119" data-name="Path 119" d="M-964.929,1105.092l3.86-2.687a.311.311,0,0,1,.488.255v1.819h4.805a.868.868,0,0,1,.868.868.867.867,0,0,1-.868.868h-4.805v1.819a.311.311,0,0,1-.488.255l-3.86-2.687A.31.31,0,0,1-964.929,1105.092Z" transform="translate(1246.062 -755.666)" fill="#1d3f4d" opacity="0.4"/></g></svg>
                             <svg x-show="method === 'post'" class="w-6 h-6 ml-5" viewBox="0 0 15.154 11.996"><path id="Path_118" data-name="Path 118" d="M-955.041,1105.092l-3.86-2.687a.311.311,0,0,0-.488.255v1.819h-4.805a.868.868,0,0,0-.868.868.867.867,0,0,0,.868.868h4.805v1.819a.311.311,0,0,0,.488.255l3.86-2.687A.31.31,0,0,0-955.041,1105.092Z" transform="translate(970.062 -1102.349)" fill="#22a586"/><path id="Path_119" data-name="Path 119" d="M-955.041,1105.092l-3.86-2.687a.311.311,0,0,0-.488.255v1.819h-4.805a.868.868,0,0,0-.868.868.867.867,0,0,0,.868.868h4.805v1.819a.311.311,0,0,0,.488.255l3.86-2.687A.31.31,0,0,0-955.041,1105.092Z" transform="translate(965.062 -1096.349)" fill="#22a586" opacity="0.4"/></svg>
@@ -45,9 +45,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <label class="sim-label">Network</label>
-                    <div x-data="{ network: '{{ $network }}', hide: true }" class="inline-block relative w-full max-w-sm z-20">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="w-full sm:w-32 text-white font-bold pr-0 sm:pr-4 mb-0 sm:mb-0">Network</label>
+                    <div x-data="{ network: '{{ $network }}', hide: true }" class="inline-block relative w-full sm:max-w-sm z-20">
                         <div class="absolute inset-y-0 left-0 flex items-center">
                             <img x-show="network === 'at'" class="inline-block w-6 h-6 ml-5" src="{{ config('app.env') === 'production' ? secure_asset('img/airteltigo.png') : asset('img/airteltigo.png') }}" />
                             <img x-show="network === 'glo'" class="inline-block w-6 h-6 ml-5" src="{{ config('app.env') === 'production' ? secure_asset('img/glo.png') : asset('img/glo.png') }}" />
@@ -86,9 +86,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <label class="sim-label">Phone Number</label>
-                    <div x-data="{ phoneNumber: '{{ $phoneNumber }}' }" class="inline-block relative w-full max-w-sm">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="w-full sm:w-32 text-white font-bold pr-0 sm:pr-4 mb-0 sm:mb-0">Phone Number</label>
+                    <div x-data="{ phoneNumber: '{{ $phoneNumber }}' }" class="inline-block relative w-full sm:max-w-sm">
                         <input x-bind:class="{ 'bg-gray-100 text-blue-800 opacity-100': phoneNumber !== '' }" x-model="phoneNumber" class="form-input sim-input pl-5 pr-12 bg-white" wire:model.defer="phoneNumber" type="tel" name="phone_number" placeholder="eg. 0546628393" autocomplete="off" />
                         <div class="absolute inset-y-0 right-0 flex items-center">
                             <div wire:model="phoneNumber">
@@ -97,9 +97,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center">
-                    <label class="sim-label">Aggregator</label>
-                    <div x-data="{ aggregator: '{{ $aggregator }}', hide: true }" class="inline-block relative w-full max-w-sm z-10">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="w-full sm:w-32 text-white font-bold pr-0 sm:pr-4 mb-0 sm:mb-0">Aggregator</label>
+                    <div x-data="{ aggregator: '{{ $aggregator }}', hide: true }" class="inline-block relative w-full sm:max-w-sm z-10">
                         <div class="absolute inset-y-0 left-0 flex items-center">
                             <img x-show="aggregator === 'korba'" class="inline-block w-6 h-6 ml-5" src="{{ config('app.env') === 'production' ? secure_asset('img/korba.png') : asset('img/korba.png') }}" />
                             <img x-show="aggregator === 'nsano'" class="inline-block w-6 h-6 ml-5" src="{{ config('app.env') === 'production' ? secure_asset('img/nsano.png') : asset('img/nsano.png') }}" />
@@ -148,8 +148,8 @@
             </div>
 
             <div class="flex-none relative">
-                <div class="absolute right-0 bottom-0">
-                    <div class="bg-white h-135 w-72 rounded-2xl px-3 pt-3 pb-8 shadow-xl -mb-12">
+                <div class="relative sm:absolute sm:right-0 sm:bottom-0">
+                    <div class="bg-white w-full sm:w-72 sm:h-135 rounded-2xl px-3 pt-3 pb-8 shadow-xl -mb-12">
                         <div class="bg-ash-light h-full rounded-xl">
                             <div class="flex flex-col h-full space-y-2 p-2">
                                 <pre class="flex-1 overflow-y-auto overflow-x-hidden"><code class="text-xs text-gray-700 leading-tight tracking-tight whitespace-pre-wrap break-words" wire:loading.remove wire:target="sendRequest">{{ $output }}</code><p wire:loading wire:target="sendRequest">Loading...</p></pre>

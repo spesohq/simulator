@@ -31,7 +31,7 @@
             <!-- Header -->
             <div class="flex-shrink bg-purple-800">
                 <div class="w-full mx-auto flex-col h-full">
-                    <div class="flex items-center justify-between pt-6 pb-8 pl-32 pr-32">
+                    <div class="flex items-center justify-between pt-6 pb-8 px-6 md:px-12 lg:px-32">
                         <div class="text-lg flex-none">
                             <a href="{{ route('home') }}">
                                 <img src="{{ asset('img/logo.png') }}" width="100">
@@ -43,7 +43,7 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="flex-1 px-32 pt-16">
+                    <div class="flex-1 px-6 md:px-12 lg:px-32 pt-16">
                         @yield('content')
                     </div>
                 </div>
