@@ -31,7 +31,7 @@
             <!-- Header -->
             <div class="flex-shrink bg-purple-800">
                 <div class="w-full mx-auto flex-col h-full">
-                    <div class="flex items-center justify-between pt-6 pb-8 px-6 md:px-12 lg:px-32">
+                    <div class="flex items-center justify-between pt-6 pb-8 px-6 sm:px-12 md:px-20 lg:px-32">
                         <div class="text-lg flex-none">
                             <a href="{{ route('home') }}">
                                 <img src="{{ asset('img/logo.png') }}" width="100">
@@ -43,7 +43,7 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="flex-1 px-6 md:px-12 lg:px-32 pt-16">
+                    <div class="flex-1 px-6 sm:px-12 md:px-20 lg:px-32 pt-16">
                         @yield('content')
                     </div>
                 </div>
@@ -51,13 +51,13 @@
 
             <!-- Footer -->
             <div class="flex-none flex items-center justify-between py-8 text-ash-darkest bg-white">
-                <div class="space-x-5 ml-32">
+                <div class="space-x-5 ml-6 sm:ml-12 md:ml-20 lg:ml-32">
                     <p class="text-black">
                         &copy; 2025. <a href="https://speso.co" target="_blank" class="text-purple-800 hover:text-purple-900 font-semibold">Speso Technologies Limited</a>
                     </p>
                 </div>
 
-                <div class="mr-12">
+                <div class="mr-6 sm:mr-12">
                     <span class="text-black">v1.0</span>
                 </div>
             </div>
