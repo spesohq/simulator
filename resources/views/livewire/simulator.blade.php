@@ -1,8 +1,8 @@
 <div class="flex-1">
-    <div class="flex h-full">
-        <div class="flex-1">
-            <h3 class="text-white font-semibold text-xl tracking-wide mb-12">
-                Intended for use by developers to test their endpoint <br>
+    <div class="flex h-full relative">
+        <div class="flex-1 md:pr-72 lg:pr-80 xl:pr-96">
+            <h3 class="text-white font-semibold text-xl tracking-wide mb-8 md:mb-12">
+                Intended for use by developers to test their endpoint<br class="hidden lg:inline">
                 implementations before integration.
             </h3>
 
@@ -10,7 +10,7 @@
                 <div class="flex items-center">
                     <label class="sim-label">Host URL</label>
                     <div x-data="{ url: '{{ $url }}' }" class="inline-block relative w-full max-w-sm">
-                        <input x-bind:class="{ 'bg-gray-100 text-blue-800 opacity-100': url !== '' }" x-model="url" class="form-input sim-input pl-5 pr-12 bg-white" wire:model.defer="url" type="url" name="url" placeholder="eg. https://a924d784.ngrok.io" autocomplete="off" />
+                        <input x-bind:class="{ 'bg-gray-100 text-blue-800 opacity-100': url !== '' }" x-model="url" class="form-input sim-input pl-5 pr-12 bg-white w-full" wire:model.defer="url" type="url" name="url" placeholder="eg. https://a924d784.ngrok.io" autocomplete="off" />
                         <div class="absolute inset-y-0 right-0 flex items-center">
                             <div wire:model="url">
                                 <svg x-on:click="url = ''" x-show="url !== ''" class="w-6 h-6 text-blue-700 mr-5 cursor-pointer" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
@@ -147,9 +147,9 @@
                 </div>
             </div>
 
-            <div class="flex-none relative">
-                <div class="absolute right-0 bottom-0">
-                    <div class="bg-white h-135 w-72 rounded-2xl px-3 pt-3 pb-8 shadow-xl -mb-12">
+            <div class="flex-none">
+                <div class="hidden md:block absolute right-0 bottom-0 md:right-4 lg:right-0 w-72 md:w-64 lg:w-72">
+                    <div class="bg-white h-135 w-full rounded-2xl px-3 pt-3 pb-8 shadow-xl -mb-12">
                         <div class="bg-ash-light h-full rounded-xl">
                             <div class="flex flex-col h-full space-y-2 p-2">
                                 <pre class="flex-1 overflow-y-auto overflow-x-hidden"><code class="text-xs text-gray-700 leading-tight tracking-tight whitespace-pre-wrap break-words" wire:loading.remove wire:target="sendRequest">{{ $output }}</code><p wire:loading wire:target="sendRequest">Loading...</p></pre>
@@ -172,7 +172,7 @@
                                                 </span>
                                             </span>
                                         </button>
-                                        <button class="text-blue-700 hover:text-blue-600 py-3 px-5 focus:outline-none focus:shadow-outline rounded-md" type="button" wire:click="cancelRequest">
+                                        <button class="text-black hover:text-gray-700 py-3 px-5 focus:outline-none focus:shadow-outline rounded-md" type="button" wire:click="cancelRequest">
                                             <span class="flex items-center justify-center space-x-2">
                                                 <svg class="w-6 h-6" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                                 <span class="font-bold">
