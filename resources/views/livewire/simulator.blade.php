@@ -1,9 +1,9 @@
 <div class="flex-1">
     <div class="flex flex-col md:flex-row h-full relative">
         <div class="flex-1 md:pr-72 lg:pr-80 xl:pr-96">
-            <h3 class="text-white font-semibold text-lg md:text-xl tracking-wide mb-6 md:mb-8 lg:mb-12">
-                Intended for use by developers to test their endpoint<br class="hidden lg:inline">
-                implementations before integration.
+            <h3 class="text-white font-semibold text-lg md:text-xl tracking-wide mb-6 md:mb-8 lg:mb-10">
+                Intended for use by developers to test their<br class="hidden md:inline">
+                endpoint implementations before integration.
             </h3>
 
             <div class="space-y-4 md:space-y-4 pb-8 md:pb-16">

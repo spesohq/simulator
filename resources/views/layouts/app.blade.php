@@ -102,7 +102,7 @@
                     </div>
 
                     <!-- Content -->
-                    <div class="flex-1 px-6 sm:px-12 md:px-20 lg:px-32 pt-16">
+                    <div class="flex-1 px-6 sm:px-12 md:px-20 lg:px-32 pt-8 md:pt-12">
                         @yield('content')
                     </div>
                 </div>
