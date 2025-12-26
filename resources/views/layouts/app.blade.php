@@ -37,8 +37,67 @@
                                 <img src="{{ asset('img/logo.png') }}" width="100">
                             </a>
                         </div>
-                        <div class="flex space-x-3">
+                        
+                        <!-- Desktop Navigation -->
+                        <div class="hidden md:flex space-x-3">
                             @include('partials.navigation')
+                        </div>
+
+                        <!-- Mobile Hamburger Menu -->
+                        <div class="md:hidden" x-data="{ open: false }">
+                            <!-- Hamburger Button -->
+                            <button @click="open = true" class="text-white p-2 focus:outline-none" aria-label="Open menu">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                                </svg>
+                            </button>
+
+                            <!-- Mobile Menu Overlay -->
+                            <div x-show="open" 
+                                 x-transition:enter="transition ease-out duration-300"
+                                 x-transition:enter-start="opacity-0"
+                                 x-transition:enter-end="opacity-100"
+                                 x-transition:leave="transition ease-in duration-200"
+                                 x-transition:leave-start="opacity-100"
+                                 x-transition:leave-end="opacity-0"
+                                 @click.away="open = false"
+                                 class="fixed inset-0 bg-purple-900 bg-opacity-95 z-50 flex flex-col"
+                                 style="display: none;">
+                                
+                                <!-- Close Button -->
+                                <div class="flex justify-between items-center px-6 pt-6 pb-4">
+                                    <img src="{{ asset('img/logo.png') }}" width="100">
+                                    <button @click="open = false" class="text-white p-2 focus:outline-none" aria-label="Close menu">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Mobile Navigation Links -->
+                                <nav class="flex flex-col space-y-2 px-6 py-8">
+                                    <a href="{{ route('home') }}" class="block py-3 px-4 text-white text-lg font-semibold rounded-md transition {{ request()->routeIs('home') ? 'bg-purple-700' : 'hover:bg-purple-800' }}">
+                                        Simulator
+                                    </a>
+                                    <a href="{{ route('how-it-works') }}" class="block py-3 px-4 text-white text-lg font-semibold rounded-md transition {{ request()->routeIs('how-it-works') ? 'bg-purple-700' : 'hover:bg-purple-800' }}">
+                                        How It Works
+                                    </a>
+                                    <a href="{{ config('app.url') }}?url=https://birthreg.speso.co/ussd&method=post&network=mtn&phone=0544909090&aggregator=nalo&ussd=*920*28#" class="block py-3 px-4 text-white text-lg font-semibold rounded-md transition hover:bg-purple-800" title="Try it out">
+                                        Try it out
+                                    </a>
+                                    <a href="{{ route('faq') }}" class="block py-3 px-4 text-white text-lg font-semibold rounded-md transition {{ request()->routeIs('faq') ? 'bg-purple-700' : 'hover:bg-purple-800' }}">
+                                        FAQ
+                                    </a>
+                                    <a href="https://github.com/spesohq/simulator" target="_blank" class="block py-3 px-4 text-white text-lg font-semibold rounded-md transition hover:bg-purple-800 inline-flex items-center" aria-label="Open Documentation (GitHub)">
+                                        <span>Documentation</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-2" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                            <path d="M15 3h6v6"></path>
+                                            <path d="M10 14L21 3"></path>
+                                        </svg>
+                                    </a>
+                                </nav>
+                            </div>
                         </div>
                     </div>
 
