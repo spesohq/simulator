@@ -2056,26 +2056,14 @@ __webpack_require__(/*! alpinejs */ "./node_modules/alpinejs/dist/alpine.js");
 
 /***/ }),
 
-/***/ "./resources/sass/app.scss":
-/*!*********************************!*\
-  !*** ./resources/sass/app.scss ***!
-  \*********************************/
-/*! no static exports found */
-/***/ (function(module, exports) {
-
-throw new Error("Module build failed (from ./node_modules/css-loader/index.js):\nModuleBuildError: Module build failed (from ./node_modules/postcss-loader/src/index.js):\n/Users/manford/Code/simulator/node_modules/generator-function/require.mjs:1\n(function (exports, require, module, __filename, __dirname) { import getGeneratorFunction from './index.js';\n                                                              ^^^^^^\n\nSyntaxError: Cannot use import statement outside a module\n    at new Script (node:vm:117:7)\n    at NativeCompileCache._moduleCompile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:240:18)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:184:36)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/is-generator-function/index.js:12:28)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/which-builtin-type/index.js:12:27)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/reflect.getprototypeof/implementation.js:6:24)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/reflect.getprototypeof/polyfill.js:3:22)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at Module._load (node:internal/modules/cjs/loader:1299:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)\n    at Module.require (node:internal/modules/cjs/loader:1503:12)\n    at require (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:159:20)\n    at Object.<anonymous> (/Users/manford/Code/simulator/node_modules/typed-array-byte-offset/index.js:5:11)\n    at Module._compile (/Users/manford/Code/simulator/node_modules/v8-compile-cache/v8-compile-cache.js:192:30)\n    at Object..js (node:internal/modules/cjs/loader:1893:10)\n    at Module.load (node:internal/modules/cjs/loader:1480:32)\n    at /Users/manford/Code/simulator/node_modules/webpack/lib/NormalModule.js:316:20\n    at /Users/manford/Code/simulator/node_modules/loader-runner/lib/LoaderRunner.js:367:11\n    at /Users/manford/Code/simulator/node_modules/loader-runner/lib/LoaderRunner.js:233:18\n    at context.callback (/Users/manford/Code/simulator/node_modules/loader-runner/lib/LoaderRunner.js:111:13)\n    at /Users/manford/Code/simulator/node_modules/postcss-loader/src/index.js:208:9");
-
-/***/ }),
-
 /***/ 0:
-/*!*************************************************************!*\
-  !*** multi ./resources/js/app.js ./resources/sass/app.scss ***!
-  \*************************************************************/
+/*!***********************************!*\
+  !*** multi ./resources/js/app.js ***!
+  \***********************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /Users/manford/Code/simulator/resources/js/app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! /Users/manford/Code/simulator/resources/sass/app.scss */"./resources/sass/app.scss");
+module.exports = __webpack_require__(/*! /home/joytarib/Documents/Project/simulator/resources/js/app.js */"./resources/js/app.js");
 
 
 /***/ })
